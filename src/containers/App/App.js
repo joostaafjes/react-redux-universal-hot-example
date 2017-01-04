@@ -79,7 +79,7 @@ export default class App extends Component {
             <Navbar.Toggle />
           </Navbar.Header>
 
-          <Navbar.Collapse eventKey={0}>
+          <Navbar.Collapse>
             <Nav navbar>
               {user && <LinkContainer to="/chatFeathers">
                 <NavItem>Chat with Feathers</NavItem>
