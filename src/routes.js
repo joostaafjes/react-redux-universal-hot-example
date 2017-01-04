@@ -1,35 +1,31 @@
 import React from 'react';
-import {IndexRoute, Route} from 'react-router';
+import { IndexRoute, Route } from 'react-router';
 import { isLoaded as isAuthLoaded, load as loadAuth } from 'redux/modules/auth';
-import {
-    App,
-    Chat,
-    Home,
-    Widgets,
-    About,
-    Login,
-    LoginSuccess,
-    Survey,
-    NotFound,
-    Pagination,
-  } from 'containers';
+import { App, Home, NotFound } from 'containers';
 
-export default (store) => {
-  const requireLogin = (nextState, replace, cb) => {
-    function checkAuth() {
-      const { auth: { user }} = store.getState();
-      if (!user) {
-        // oops, not logged in, so can't be here!
-        replace('/');
-      }
-      cb();
-    }
+// eslint-disable-next-line import/no-dynamic-require
+if (typeof System.import === 'undefined') System.import = module => Promise.resolve(require(module));
 
+export default store => {
+  const loadAuthIfNeeded = cb => {
     if (!isAuthLoaded(store.getState())) {
-      store.dispatch(loadAuth()).then(checkAuth);
-    } else {
-      checkAuth();
+      return store.dispatch(loadAuth()).then(() => cb());
     }
+    return cb();
+  };
+  const checkUser = (cond, replace, cb) => {
+    const { auth: { user } } = store.getState();
+    if (!cond(user)) replace('/');
+    cb();
+  };
+
+  const requireNotLogged = (nextState, replace, cb) => {
+    const cond = user => !user;
+    loadAuthIfNeeded(() => checkUser(cond, replace, cb));
+  };
+  const requireLogin = (nextState, replace, cb) => {
+    const cond = user => !!user;
+    loadAuthIfNeeded(() => checkUser(cond, replace, cb));
   };
 
   /**
@@ -37,23 +33,28 @@ export default (store) => {
    */
   return (
     <Route path="/" component={App}>
-      { /* Home (main) route */ }
-      <IndexRoute component={Home}/>
+      {/* Home (main) route */}
+      <IndexRoute component={Home} />
 
-      { /* Routes requiring login */ }
+      {/* Routes requiring login */}
       <Route onEnter={requireLogin}>
-        <Route path="chat" component={Chat}/>
-        <Route path="loginSuccess" component={LoginSuccess}/>
+        <Route path="loginSuccess" getComponent={() => System.import('./containers/LoginSuccess/LoginSuccess')} />
+        <Route path="chatFeathers" getComponent={() => System.import('./containers/ChatFeathers/ChatFeathers')} />
       </Route>
 
-      { /* Routes */ }
-      <Route path="about" component={About}/>
-      <Route path="login" component={Login}/>
-      <Route path="pagination" component={Pagination}/>
-      <Route path="survey" component={Survey}/>
-      <Route path="widgets" component={Widgets}/>
+      {/* Routes disallow login */}
+      <Route onEnter={requireNotLogged}>
+        <Route path="register" getComponent={() => System.import('./containers/Register/Register')} />
+      </Route>
 
-      { /* Catch all route */ }
+      {/* Routes */}
+      <Route path="login" getComponent={() => System.import('./containers/Login/Login')} />
+      <Route path="about" getComponent={() => System.import('./containers/About/About')} />
+      <Route path="survey" getComponent={() => System.import('./containers/Survey/Survey')} />
+      <Route path="widgets" getComponent={() => System.import('./containers/Widgets/Widgets')} />
+      <Route path="chat" getComponent={() => System.import('./containers/Chat/Chat')} />
+
+      {/* Catch all route */}
       <Route path="*" component={NotFound} status={404} />
     </Route>
   );

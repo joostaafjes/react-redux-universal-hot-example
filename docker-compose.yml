@@ -8,6 +8,6 @@ services:
       - /usr/src/app/node_modules
     ports:
       - 9040:3000
-      - 9041:3001
+      - 3001:3001
       - 9042:3030
     command: ["npm", "run", "dev"]
